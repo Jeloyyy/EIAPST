@@ -1,0 +1,19 @@
+declare module 'lucide-react' {
+  export const Menu: any;
+  export const X: any;
+  export const LayoutDashboard: any;
+  export const Users: any;
+  export const Package: any;
+  export const ShoppingCart: any;
+  export const User: any;
+  export const LogOut: any;
+  export const ChevronDown: any;
+  export const Search: any;
+  export const Plus: any;
+  export const Eye: any;
+  export const EyeOff: any;
+  export const RotateCw: any;
+  export const Send: any;
+  export const Lock: any;
+  export const Unbox: any;
+}
