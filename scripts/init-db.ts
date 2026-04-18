@@ -131,7 +131,7 @@ async function setupDatabase() {
     for (const supply of supplies) {
       let status = 'available';
       if (supply.quantity === 0) status = 'out-of-stock';
-      else if (supply.quantity <= supply.reorderLevel) status = 'low-stock';
+      else if (supply.quantity <= 5) status = 'low-stock-available';
 
       supplyStmt.run(
         generateId(),

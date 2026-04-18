@@ -77,12 +77,26 @@ export default function RequestsPage() {
       const token = localStorage.getItem('authToken');
       const userId = localStorage.getItem('userId');
 
-      // For now, just show success message
-      setMessage('Request submitted successfully! Admin will review your request.');
-      setRequestCart([]);
+      const res = await fetch('/api/supply-requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userId,
+          items: requestCart,
+        }),
+      });
 
-      // In a real app, you would send this to an API endpoint
-      console.log('Request data:', { userId, items: requestCart });
+      const data = await res.json();
+
+      if (data.success) {
+        setMessage('Request submitted successfully! Admin will review your request.');
+        setRequestCart([]);
+      } else {
+        setMessage(data.message || 'Error submitting request');
+      }
     } catch (error) {
       setMessage('Error submitting request');
       console.error('Error:', error);
@@ -122,7 +136,7 @@ export default function RequestsPage() {
                   placeholder="Search available supplies..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="flex-1 outline-none"
+                  className="flex-1 text-black outline-none"
                 />
               </div>
             </div>
@@ -180,7 +194,7 @@ export default function RequestsPage() {
                           min="1"
                           value={item.quantity}
                           onChange={(e) => updateQuantity(index, parseInt(e.target.value))}
-                          className="mt-1 w-16 border border-gray-300 rounded px-2 py-1 text-sm"
+                          className="mt-1 w-16 border text-black border-gray-300 rounded px-2 py-1 text-sm"
                         />
                       </div>
                       <button

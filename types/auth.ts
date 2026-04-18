@@ -67,12 +67,13 @@ export interface Supply {
 export interface Employee {
   id: string;
   firstName: string;
+  middleName?: string;
   lastName: string;
+  extensionName?: string;
   email: string;
   department: string;
-  position: string;
+  role: string;
   phone?: string;
-  hireDate: Date;
   status: 'active' | 'inactive' | 'on-leave';
   createdAt: Date;
   updatedAt: Date;

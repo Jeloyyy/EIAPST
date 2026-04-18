@@ -13,13 +13,16 @@ export default function AddEmployeeModal({ isOpen, onClose, onSuccess }: AddEmpl
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    first_name: '',
+    middle_name: '',
+    last_name: '',
+    extension_name: '',
     email: '',
+    password: '',
+    confirmPassword: '',
     department: '',
-    position: '',
     phone: '',
-    hireDate: '',
+    role: 'employee',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -32,9 +35,16 @@ export default function AddEmployeeModal({ isOpen, onClose, onSuccess }: AddEmpl
     setError('');
     setIsSubmitting(true);
 
+    // Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const token = localStorage.getItem('authToken');
-      const res = await fetch('/api/employees', {
+      const res = await fetch('/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -46,20 +56,23 @@ export default function AddEmployeeModal({ isOpen, onClose, onSuccess }: AddEmpl
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.message || 'Failed to add employee');
+        setError(data.message || 'Failed to add user');
         setIsSubmitting(false);
         return;
       }
 
       // Reset form
       setFormData({
-        firstName: '',
-        lastName: '',
+        first_name: '',
+        middle_name: '',
+        last_name: '',
+        extension_name: '',
         email: '',
+        password: '',
+        confirmPassword: '',
         department: '',
-        position: '',
         phone: '',
-        hireDate: '',
+        role: 'employee',
       });
 
       onSuccess();
@@ -76,7 +89,7 @@ export default function AddEmployeeModal({ isOpen, onClose, onSuccess }: AddEmpl
     <>
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-40"
+        className="fixed opacity-100 inset-0 z-40"
         onClick={onClose}
       />
 
@@ -85,7 +98,7 @@ export default function AddEmployeeModal({ isOpen, onClose, onSuccess }: AddEmpl
         <div className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Add Employee</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Add User</h2>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -110,12 +123,27 @@ export default function AddEmployeeModal({ isOpen, onClose, onSuccess }: AddEmpl
               </label>
               <input
                 type="text"
-                name="firstName"
-                value={formData.firstName}
+                name="first_name"
+                value={formData.first_name}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="John"
+              />
+            </div>
+
+            {/* Middle Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Middle Name
+              </label>
+              <input
+                type="text"
+                name="middle_name"
+                value={formData.middle_name}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Joseph"
               />
             </div>
 
@@ -126,42 +154,57 @@ export default function AddEmployeeModal({ isOpen, onClose, onSuccess }: AddEmpl
               </label>
               <input
                 type="text"
-                name="lastName"
-                value={formData.lastName}
+                name="last_name"
+                value={formData.last_name}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Doe"
               />
             </div>
 
-            {/* Email */}
+            {/* Extension Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email *
+                Extension Name (Jr., Sr., III, etc.)
               </label>
               <input
-                type="email"
-                name="email"
-                value={formData.email}
+                type="text"
+                name="extension_name"
+                value={formData.extension_name}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Jr., Sr., III"
+              />
+            </div>
+
+            {/* Role */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Role *
+              </label>
+              <select
+                name="role"
+                value={formData.role}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="john@example.com"
-              />
+                className="w-full px-3 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="employee">Employee</option>
+                <option value="admin">Admin</option>
+              </select>
             </div>
 
             {/* Department */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Department *
+                Department
               </label>
               <select
                 name="department"
                 value={formData.department}
                 onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select Department</option>
                 <option value="Operations">Operations</option>
@@ -174,22 +217,6 @@ export default function AddEmployeeModal({ isOpen, onClose, onSuccess }: AddEmpl
               </select>
             </div>
 
-            {/* Position */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Position *
-              </label>
-              <input
-                type="text"
-                name="position"
-                value={formData.position}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Manager, Staff, etc."
-              />
-            </div>
-
             {/* Phone */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -200,22 +227,56 @@ export default function AddEmployeeModal({ isOpen, onClose, onSuccess }: AddEmpl
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="+1 234 567 8900"
               />
             </div>
-
-            {/* Hire Date */}
+            {/* Email */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Hire Date
+                Email *
               </label>
               <input
-                type="date"
-                name="hireDate"
-                value={formData.hireDate}
+                type="email"
+                name="email"
+                value={formData.email}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+                className="w-full px-3 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="john@example.com"
+              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Password *
+              </label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                minLength={8}
+                className="w-full px-3 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Min 8 characters"
+              />
+            </div>
+            {/* Confirm Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Confirm Password *
+              </label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+                minLength={8}
+                className="w-full px-3 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Confirm password"
               />
             </div>
 
@@ -225,7 +286,7 @@ export default function AddEmployeeModal({ isOpen, onClose, onSuccess }: AddEmpl
               disabled={isSubmitting}
               className="w-full mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
             >
-              {isSubmitting ? 'Adding Employee...' : 'Add Employee'}
+              {isSubmitting ? 'Adding User...' : 'Add User'}
             </button>
           </form>
         </div>

@@ -13,7 +13,6 @@ import {
   User,
   LogOut,
   ChevronDown,
-  Unbox,
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -53,7 +52,7 @@ export default function Sidebar() {
     {
       name: 'Issued Supplies',
       href: '/issued-supplies',
-      icon: Unbox,
+      icon: Package,
     },
     {
       name: 'My Profile',

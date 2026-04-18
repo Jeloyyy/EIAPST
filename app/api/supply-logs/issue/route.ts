@@ -6,7 +6,7 @@ import { generateId, getCurrentTimestamp, logAuditTrail } from '@/lib/database';
 import { verifyToken } from '@/lib/auth-server';
 
 interface IssueSupplyRequest {
-  employeeId: string;
+  userId: string;
   supplyId: string;
   quantity: number;
   notes?: string;
@@ -20,9 +20,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body: IssueSupplyRequest = await request.json();
-    const { employeeId, supplyId, quantity, notes } = body;
+    const { userId, supplyId, quantity, notes } = body;
 
-    if (!employeeId || !supplyId || quantity <= 0) {
+    if (!userId || !supplyId || quantity <= 0) {
       return NextResponse.json(
         { success: false, message: 'Invalid parameters' },
         { status: 400 }
@@ -31,12 +31,12 @@ export async function POST(request: NextRequest) {
 
     const db = getDatabase();
 
-    // Verify employee exists
-    const empStmt = db.prepare('SELECT id FROM employees WHERE id = ?');
-    const employee = empStmt.get(employeeId);
-    if (!employee) {
+    // Verify user exists
+    const userStmt = db.prepare('SELECT id FROM users WHERE id = ?');
+    const user = userStmt.get(userId);
+    if (!user) {
       return NextResponse.json(
-        { success: false, message: 'Employee not found' },
+        { success: false, message: 'User not found' },
         { status: 404 }
       );
     }
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
 
     createLogStmt.run(
       logId,
-      employeeId,
+      userId,
       supplyId,
       quantity,
       now,
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
       'SUPPLY_ISSUED',
       'supply_log',
       logId,
-      { employeeId, supplyId, quantity },
+      { userId, supplyId, quantity },
       request.headers.get('x-forwarded-for') || 'unknown',
       request.headers.get('user-agent') || 'unknown',
       'success'

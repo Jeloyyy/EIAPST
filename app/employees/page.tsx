@@ -3,40 +3,49 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import AddEmployeeModal from '@/components/AddEmployeeModal';
-import { Search, Plus } from 'lucide-react';
+import EditEmployeeModal from '@/components/EditEmployeeModal';
+import { Search, Plus, Edit, Trash2 } from 'lucide-react';
 
-interface Employee {
+interface User {
   id: string;
   first_name: string;
-  last_name: string;
+  middle_name?: string;
+  last_name?: string;
+  extension_name?: string;
   email: string;
   phone?: string;
   status: string;
   department?: string;
+  role?: string;
 }
 
 export default function EmployeesPage() {
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddEmployeeModalOpen, setIsAddEmployeeModalOpen] = useState(false);
+  const [isEditEmployeeModalOpen, setIsEditEmployeeModalOpen] = useState(false); // State for modal visibility
+  const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null); // State for selected employee
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [currentUserRole, setCurrentUserRole] = useState<string>('');
 
   useEffect(() => {
-    fetchEmployees();
+    const role = localStorage.getItem('userRole') || '';
+    setCurrentUserRole(role);
+    fetchUsers();
   }, [refreshTrigger]);
 
-  const fetchEmployees = async () => {
+  const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const res = await fetch('/api/employees', {
+      const res = await fetch('/api/users', {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      setEmployees(Array.isArray(data.data) ? data.data : []);
+      setUsers(Array.isArray(data.data) ? data.data : []);
       setIsLoading(false);
     } catch (error) {
-      console.error('Error fetching employees:', error);
+      console.error('Error fetching users:', error);
       setIsLoading(false);
     }
   };
@@ -45,11 +54,40 @@ export default function EmployeesPage() {
     setRefreshTrigger((prev) => prev + 1);
   };
 
-  const filteredEmployees = employees.filter(
-    (emp) =>
-      emp.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('Are you sure you want to deactivate this user?')) return;
+    
+    try {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch(`/api/users/${userId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        alert('User deactivated successfully');
+        setRefreshTrigger((prev) => prev + 1);
+      } else {
+        alert(data.message || 'Error deactivating user');
+      }
+    } catch (error) {
+      alert('Error deactivating user');
+    }
+  };
+
+  const handleEditEmployee = (employee: User) => {
+    setSelectedEmployee(employee);
+    setIsEditEmployeeModalOpen(true);
+  };
+
+  const filteredUsers = users.filter(
+    (user) =>
+      user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.middle_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.extension_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -59,14 +97,16 @@ export default function EmployeesPage() {
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Employee Information</h1>
-            <p className="mt-2 text-gray-600">View and manage all employees in the system</p>
+            <p className="mt-2 text-gray-600">View and manage all users in the system</p>
           </div>
-          <button 
-            onClick={() => setIsAddEmployeeModalOpen(true)}
-            className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition-colors">
-            <Plus size={20} />
-            Add Employee
-          </button>
+          {currentUserRole === 'admin' && (
+            <button 
+              onClick={() => setIsAddEmployeeModalOpen(true)}
+              className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition-colors">
+              <Plus size={20} />
+              Add User
+            </button>
+          )}
         </div>
 
         {/* Search Bar */}
@@ -83,7 +123,7 @@ export default function EmployeesPage() {
           </div>
         </div>
 
-        {/* Employees Table */}
+        {/* Users Table */}
         <div className="rounded-lg bg-white shadow-md overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -101,57 +141,80 @@ export default function EmployeesPage() {
                   Department
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  Status
+                  Role
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  Actions
+                  Status
                 </th>
+                {currentUserRole === 'admin' && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                    Actions
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
-                    Loading employees...
+                  <td colSpan={currentUserRole === 'admin' ? 7 : 6} className="px-6 py-4 text-center text-gray-500">
+                    Loading users...
                   </td>
                 </tr>
-              ) : filteredEmployees.length === 0 ? (
+              ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
-                    No employees found
+                  <td colSpan={currentUserRole === 'admin' ? 7 : 6} className="px-6 py-4 text-center text-gray-500">
+                    No users found
                   </td>
                 </tr>
               ) : (
-                filteredEmployees.map((emp) => (
-                  <tr key={emp.id} className="hover:bg-gray-50 transition-colors">
+                filteredUsers.map((user) => (
+                  <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {emp.first_name} {emp.last_name}
+                      {user.first_name}{user.middle_name ? ` ${user.middle_name}` : ''}{user.extension_name ? ` ${user.extension_name}` : ''} {user.last_name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {emp.email}
+                      {user.email}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {emp.phone || 'N/A'}
+                      {user.phone || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {emp.department || 'N/A'}
+                      {user.department || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {user.role || 'employee'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${
-                          emp.status === 'active'
+                          user.status === 'active'
                             ? 'bg-green-100 text-green-800'
                             : 'bg-gray-100 text-gray-800'
                         }`}
                       >
-                        {emp.status.charAt(0).toUpperCase() + emp.status.slice(1)}
+                        {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button className="text-blue-600 hover:text-blue-900 font-medium">
-                        View
-                      </button>
-                    </td>
+                    {currentUserRole === 'admin' && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={() => handleEditEmployee(user)}
+                            className="text-blue-600 hover:text-blue-900 font-medium flex items-center gap-1"
+                          >
+                            <Edit size={16} />
+                            Edit
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteUser(user.id)}
+                            className="text-red-600 hover:text-red-900 font-medium flex items-center gap-1"
+                          >
+                            <Trash2 size={16} />
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
@@ -160,21 +223,27 @@ export default function EmployeesPage() {
         </div>
 
         {/* Summary */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <div className="rounded-lg bg-white p-4 shadow-md">
-            <p className="text-sm text-gray-600">Total Employees</p>
-            <p className="text-2xl font-bold text-gray-900">{employees.length}</p>
+            <p className="text-sm text-gray-600">Total Users</p>
+            <p className="text-2xl font-bold text-gray-900">{users.length}</p>
           </div>
           <div className="rounded-lg bg-white p-4 shadow-md">
             <p className="text-sm text-gray-600">Active</p>
             <p className="text-2xl font-bold text-green-600">
-              {employees.filter((e) => e.status === 'active').length}
+              {users.filter((u) => u.status === 'active').length}
             </p>
           </div>
           <div className="rounded-lg bg-white p-4 shadow-md">
             <p className="text-sm text-gray-600">Inactive</p>
             <p className="text-2xl font-bold text-red-600">
-              {employees.filter((e) => e.status === 'inactive').length}
+              {users.filter((u) => u.status === 'inactive').length}
+            </p>
+          </div>
+          <div className="rounded-lg bg-white p-4 shadow-md">
+            <p className="text-sm text-gray-600">On Leave</p>
+            <p className="text-2xl font-bold text-yellow-600">
+              {users.filter((u) => u.status === 'on-leave').length}
             </p>
           </div>
         </div>
@@ -185,6 +254,14 @@ export default function EmployeesPage() {
           onClose={() => setIsAddEmployeeModalOpen(false)}
           onSuccess={handleAddEmployeeSuccess}
         />
+        {isEditEmployeeModalOpen && (
+          <EditEmployeeModal
+            isOpen={isEditEmployeeModalOpen}
+            onClose={() => setIsEditEmployeeModalOpen(false)}
+            employee={selectedEmployee}
+            onSaveSuccess={() => setRefreshTrigger((prev) => prev + 1)}
+          />
+        )}
       </div>
     </DashboardLayout>
   );

@@ -3,6 +3,13 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
+interface User {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+}
+
 interface Supply {
   id: string;
   name: string;
@@ -14,23 +21,24 @@ interface IssueSupplyModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  employeeId?: string;
-  employeeName?: string;
+  userId?: string;
+  userName?: string;
 }
 
 export default function IssueSupplyModal({
   isOpen,
   onClose,
   onSuccess,
-  employeeId,
-  employeeName,
+  userId,
+  userName,
 }: IssueSupplyModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [users, setUsers] = useState<User[]>([]);
   const [supplies, setSupplies] = useState<Supply[]>([]);
-  const [isLoadingSupplies, setIsLoadingSupplies] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState({
-    employeeId: employeeId || '',
+    userId: userId || '',
     supplyId: '',
     quantity: 1,
     notes: '',
@@ -38,22 +46,32 @@ export default function IssueSupplyModal({
 
   useEffect(() => {
     if (isOpen) {
-      fetchSupplies();
+      fetchData();
     }
   }, [isOpen]);
 
-  const fetchSupplies = async () => {
+  const fetchData = async () => {
+    setIsLoading(true);
     try {
       const token = localStorage.getItem('authToken');
-      const res = await fetch('/api/supplies', {
+      
+      // Fetch users
+      const usersRes = await fetch('/api/users', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
-      setSupplies(Array.isArray(data.data) ? data.data : []);
-      setIsLoadingSupplies(false);
+      const usersData = await usersRes.json();
+      setUsers(Array.isArray(usersData.data) ? usersData.data : []);
+
+      // Fetch supplies
+      const suppliesRes = await fetch('/api/supplies', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const suppliesData = await suppliesRes.json();
+      setSupplies(Array.isArray(suppliesData.data) ? suppliesData.data : []);
     } catch (err) {
-      console.error('Error fetching supplies:', err);
-      setIsLoadingSupplies(false);
+      console.error('Error fetching data:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -71,7 +89,7 @@ export default function IssueSupplyModal({
     setIsSubmitting(true);
 
     try {
-      if (!formData.employeeId || !formData.supplyId || formData.quantity <= 0) {
+      if (!formData.userId || !formData.supplyId || formData.quantity <= 0) {
         setError('Please fill in all required fields');
         setIsSubmitting(false);
         return;
@@ -97,7 +115,7 @@ export default function IssueSupplyModal({
 
       // Reset form
       setFormData({
-        employeeId: employeeId || '',
+        userId: userId || '',
         supplyId: '',
         quantity: 1,
         notes: '',
@@ -121,7 +139,7 @@ export default function IssueSupplyModal({
     <>
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-40"
+        className="fixed bg-opacity-100 inset-0 z-40"
         onClick={onClose}
       />
 
@@ -148,27 +166,34 @@ export default function IssueSupplyModal({
               </div>
             )}
 
-            {/* Employee ID */}
+            {/* User Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Employee *
+                User *
               </label>
-              {employeeName ? (
+              {userName ? (
                 <div className="px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
-                  {employeeName}
+                  {userName}
                 </div>
+              ) : isLoading ? (
+                <div className="px-3 py-2 text-gray-500">Loading users...</div>
               ) : (
-                <input
-                  type="text"
-                  value={
-                    formData.employeeId
-                      ? `Employee ID: ${formData.employeeId}`
-                      : ''
-                  }
-                  disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
-                  placeholder="Select from list"
-                />
+                <select
+                  name="userId"
+                  value={formData.userId}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select User</option>
+                  {users
+                    .filter((u) => u.status === 'active')
+                    .map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.first_name} {user.last_name}
+                      </option>
+                    ))}
+                </select>
               )}
             </div>
 
@@ -177,7 +202,7 @@ export default function IssueSupplyModal({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Supply *
               </label>
-              {isLoadingSupplies ? (
+              {isLoading ? (
                 <div className="px-3 py-2 text-gray-500">Loading supplies...</div>
               ) : (
                 <select
@@ -185,7 +210,7 @@ export default function IssueSupplyModal({
                   value={formData.supplyId}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select Supply</option>
                   {supplies.map((supply) => (
@@ -234,12 +259,12 @@ export default function IssueSupplyModal({
               <div className="p-3 bg-gray-50 rounded-lg text-sm">
                 <div className="flex justify-between mb-2">
                   <span className="text-gray-600">Unit Cost:</span>
-                  <span className="font-medium">${selectedSupply.unit_cost?.toFixed(2) || '0.00'}</span>
+                  <span className="font-medium">₱{selectedSupply.unit_cost?.toFixed(2) || '0.00'}</span>
                 </div>
                 <div className="flex justify-between border-t pt-2">
                   <span className="text-gray-600 font-medium">Total:</span>
                   <span className="font-bold text-blue-600">
-                    ${((selectedSupply.unit_cost || 0) * formData.quantity).toFixed(2)}
+                    ₱{((selectedSupply.unit_cost || 0) * formData.quantity).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -254,17 +279,17 @@ export default function IssueSupplyModal({
                 name="notes"
                 value={formData.notes}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Add any notes about this issue..."
                 rows={3}
+                className="w-full px-3 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Optional notes..."
               />
             </div>
 
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isSubmitting || isInsufficientStock}
-              className="w-full mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+              disabled={isSubmitting || isLoading}
+              className="w-full mt-6 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
             >
               {isSubmitting ? 'Issuing Supply...' : 'Issue Supply'}
             </button>

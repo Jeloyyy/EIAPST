@@ -14,6 +14,7 @@ interface UpdateSupplyRequest {
   reorderLevel?: number;
   supplier?: string;
   unitCost?: number;
+  price?: number;
 }
 
 // GET single supply
@@ -63,6 +64,8 @@ export async function PUT(
     const { id } = await params;
     const body: UpdateSupplyRequest = await request.json();
 
+    console.log('Update supply request body:', body);
+
     const db = getDatabase();
 
     // Check if supply exists
@@ -88,16 +91,21 @@ export async function PUT(
       updates.push('description = ?');
       values.push(body.description);
     }
+    if (body.category !== undefined) {
+      updates.push('category = ?');
+      values.push(body.category);
+    }
     if (body.quantity !== undefined) {
       updates.push('quantity = ?');
       values.push(body.quantity);
 
       // Update status based on quantity
+      // quantity <= 5: low-stock-available
+      // quantity = 0: out-of-stock
+      // quantity > 5: available
       let status = 'available';
       if (body.quantity === 0) status = 'out-of-stock';
-      else if (body.quantity <= (body.reorderLevel || supply.reorder_level)) {
-        status = 'low-stock';
-      }
+      else if (body.quantity <= 5) status = 'low-stock-available';
       updates.push('status = ?');
       values.push(status);
     }
@@ -113,7 +121,12 @@ export async function PUT(
       updates.push('supplier = ?');
       values.push(body.supplier);
     }
-    if (body.unitCost !== undefined) {
+    // Handle price field from modal (map to unit_cost)
+    if (body.price !== undefined && body.price !== null) {
+      console.log('Price field found:', body.price);
+      updates.push('unit_cost = ?');
+      values.push(body.price);
+    } else if (body.unitCost !== undefined) {
       updates.push('unit_cost = ?');
       values.push(body.unitCost);
     }

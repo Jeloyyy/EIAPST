@@ -11,7 +11,7 @@ interface IssuedSupply {
   supply_id: string;
   quantity: number;
   issued_date: string;
-  returned_date: string | null;
+  surrendered_date: string | null;
   issued_by: string;
   received_by: string | null;
   status: string;
@@ -76,7 +76,7 @@ export default function IssuedSuppliesPage() {
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Issued Supplies</h1>
-            <p className="mt-2 text-gray-600">Track all supplies issued to employees</p>
+            <p className="mt-2 text-gray-600">Track all supplies issued to users</p>
           </div>
           <button
             onClick={() => setIsIssueSupplyModalOpen(true)}
@@ -147,10 +147,10 @@ export default function IssuedSuppliesPage() {
                       {item.quantity}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      ${item.supply_price?.toFixed(2) || '0.00'}
+                      ₱{item.supply_price?.toFixed(2) || '0.00'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                      ${((item.supply_price || 0) * item.quantity).toFixed(2)}
+                      ₱{((item.supply_price || 0) * item.quantity).toFixed(2)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                       {item.issued_by || 'N/A'}
@@ -159,7 +159,7 @@ export default function IssuedSuppliesPage() {
                       {formatDate(item.issued_date)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      {formatDate(item.returned_date)}
+                      {formatDate(item.surrendered_date)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span
@@ -192,7 +192,7 @@ export default function IssuedSuppliesPage() {
           <div className="rounded-lg bg-white p-4 shadow-md">
             <p className="text-sm text-gray-600">Returned</p>
             <p className="text-2xl font-bold text-green-600">
-              {issuedSupplies.filter((s) => s.status === 'returned').length}
+              {issuedSupplies.filter((s) => s.status === 'surrendered').length}
             </p>
           </div>
         </div>

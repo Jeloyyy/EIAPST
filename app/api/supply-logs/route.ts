@@ -15,27 +15,27 @@ export async function GET(request: NextRequest) {
 
     // Get search parameters
     const { searchParams } = new URL(request.url);
-    const employeeId = searchParams.get('employeeId');
+    const userId = searchParams.get('userId');
     const supplyId = searchParams.get('supplyId');
     const status = searchParams.get('status');
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
 
     let query = `
-      SELECT sl.id, sl.employee_id, sl.supply_id, sl.quantity, sl.issued_date,
-             sl.returned_date, sl.issued_by, sl.received_by, sl.status, sl.notes,
-             e.first_name, e.last_name, s.name as supply_name, s.category, s.unit_cost as supply_price
+      SELECT sl.id, sl.employee_id as user_id, sl.supply_id, sl.quantity, sl.issued_date,
+             sl.returned_date as surrendered_date, sl.issued_by, sl.received_by, sl.status, sl.notes,
+             u.first_name, u.last_name, s.name as supply_name, s.category, s.unit_cost as supply_price
       FROM supply_logs sl
-      JOIN employees e ON sl.employee_id = e.id
+      JOIN users u ON sl.employee_id = u.id
       JOIN supplies s ON sl.supply_id = s.id
       WHERE 1=1
     `;
 
     const params: any[] = [];
 
-    if (employeeId) {
+    if (userId) {
       query += ' AND sl.employee_id = ?';
-      params.push(employeeId);
+      params.push(userId);
     }
 
     if (supplyId) {

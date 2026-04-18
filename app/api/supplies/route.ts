@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const db = getDatabase();
     const stmt = db.prepare(`
       SELECT id, name, description, category, quantity, unit, reorder_level,
-             reorder_quantity, status, supplier, unit_cost, last_restocked, created_at
+             reorder_quantity, status, supplier, unit_cost as price, last_restocked, created_at
       FROM supplies
       ORDER BY name ASC
     `);
@@ -78,10 +78,13 @@ export async function POST(request: NextRequest) {
     const supplyId = generateId();
     const now = getCurrentTimestamp();
 
-    // Determine status
+    // Determine status based on quantity
+    // quantity <= 5: low-stock-available
+    // quantity = 0: out-of-stock
+    // quantity > 5: available
     let status = 'available';
     if (quantity === 0) status = 'out-of-stock';
-    else if (quantity <= reorderLevel) status = 'low-stock';
+    else if (quantity <= 5) status = 'low-stock-available';
 
     const stmt = db.prepare(`
       INSERT INTO supplies (

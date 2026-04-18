@@ -5,11 +5,11 @@ import { Plus } from 'lucide-react';
 
 interface IssuedSupply {
   id: string;
-  employee_id: string;
+  user_id: string;
   supply_id: string;
   quantity: number;
   issued_date: string;
-  returned_date: string | null;
+  surrendered_date: string | null;
   issued_by: string;
   received_by: string | null;
   status: string;
@@ -75,7 +75,7 @@ export default function IssuedSuppliesTable({ onIssueClick }: IssuedSuppliesTabl
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Issued Supplies</h2>
-          <p className="mt-1 text-sm text-gray-600">Track all supplies issued to employees</p>
+          <p className="mt-1 text-sm text-gray-600">Track all supplies issued to users</p>
         </div>
         <button
           onClick={onIssueClick}
@@ -146,10 +146,10 @@ export default function IssuedSuppliesTable({ onIssueClick }: IssuedSuppliesTabl
                     {item.quantity}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                    ${item.supply_price?.toFixed(2) || '0.00'}
+                    ₱{item.supply_price?.toFixed(2) || '0.00'}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                    ${((item.supply_price || 0) * item.quantity).toFixed(2)}
+                    ₱{((item.supply_price || 0) * item.quantity).toFixed(2)}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                     {item.issued_by || 'N/A'}
@@ -158,7 +158,7 @@ export default function IssuedSuppliesTable({ onIssueClick }: IssuedSuppliesTabl
                     {formatDate(item.issued_date)}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                    {formatDate(item.returned_date)}
+                    {formatDate(item.surrendered_date)}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span

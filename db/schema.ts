@@ -31,8 +31,10 @@ export function initializeDatabase() {
         email TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
         first_name TEXT NOT NULL,
+        middle_name TEXT,
         last_name TEXT NOT NULL,
-        role TEXT NOT NULL DEFAULT 'employee' CHECK(role IN ('admin', 'manager', 'employee', 'inventory_staff')),
+        extension_name TEXT,
+        role TEXT NOT NULL DEFAULT 'employee' CHECK(role IN ('admin', 'employee')),
         department TEXT,
         phone TEXT,
         hire_date TEXT,
@@ -45,26 +47,26 @@ export function initializeDatabase() {
       );
     `);
 
-    // Employees table
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS employees (
-        id TEXT PRIMARY KEY,
-        user_id TEXT UNIQUE NOT NULL,
-        first_name TEXT NOT NULL,
-        last_name TEXT NOT NULL,
-        email TEXT UNIQUE NOT NULL,
-        department TEXT NOT NULL,
-        position TEXT NOT NULL,
-        phone TEXT,
-        hire_date TEXT NOT NULL,
-        status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'inactive', 'on-leave')),
-        created_by TEXT NOT NULL,
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (created_by) REFERENCES users(id)
-      );
-    `);
+    // Migrate existing users table to add new columns if they don't exist
+    try {
+      const userColumns = db.prepare(`PRAGMA table_info(users)`).all() as any[];
+      const columnNames = userColumns.map((col: any) => col.name);
+
+      if (!columnNames.includes('middle_name')) {
+        db.exec('ALTER TABLE users ADD COLUMN middle_name TEXT');
+      }
+      if (!columnNames.includes('extension_name')) {
+        db.exec('ALTER TABLE users ADD COLUMN extension_name TEXT');
+      }
+
+      // Update role constraint - migrate invalid roles to 'employee'
+      const invalidRoleUsers = db.prepare(`SELECT id FROM users WHERE role NOT IN ('admin', 'employee')`).all();
+      if (invalidRoleUsers.length > 0) {
+        db.exec(`UPDATE users SET role = 'employee' WHERE role NOT IN ('admin', 'employee')`);
+      }
+    } catch (e) {
+      console.warn('Could not migrate users table:', e);
+    }
 
     // Supplies/Inventory table
     db.exec(`
@@ -77,7 +79,7 @@ export function initializeDatabase() {
         unit TEXT NOT NULL,
         reorder_level INTEGER NOT NULL DEFAULT 10,
         reorder_quantity INTEGER NOT NULL DEFAULT 50,
-        status TEXT NOT NULL DEFAULT 'available' CHECK(status IN ('available', 'low-stock', 'out-of-stock')),
+        status TEXT NOT NULL DEFAULT 'available' CHECK(status IN ('available', 'low-stock-available', 'out-of-stock')),
         supplier TEXT,
         unit_cost REAL,
         last_restocked TEXT,
@@ -88,22 +90,38 @@ export function initializeDatabase() {
       );
     `);
 
+    // Supply Requests table (temporary storage for pending requests)
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS supply_requests (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        supply_id TEXT NOT NULL,
+        quantity INTEGER NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'approved', 'denied')),
+        notes TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (supply_id) REFERENCES supplies(id) ON DELETE CASCADE
+      );
+    `);
+
     // Supply Issuance/Log table
     db.exec(`
       CREATE TABLE IF NOT EXISTS supply_logs (
         id TEXT PRIMARY KEY,
-        employee_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
         supply_id TEXT NOT NULL,
         quantity INTEGER NOT NULL,
         issued_date TEXT NOT NULL,
-        returned_date TEXT,
+        surrendered_date TEXT,
         issued_by TEXT NOT NULL,
         received_by TEXT,
-        status TEXT NOT NULL DEFAULT 'issued' CHECK(status IN ('issued', 'returned', 'damaged', 'lost')),
+        status TEXT NOT NULL DEFAULT 'issued' CHECK(status IN ('issued', 'surrendered', 'damaged', 'lost')),
         notes TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
-        FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (supply_id) REFERENCES supplies(id) ON DELETE CASCADE,
         FOREIGN KEY (issued_by) REFERENCES users(id),
         FOREIGN KEY (received_by) REFERENCES users(id)
@@ -146,10 +164,9 @@ export function initializeDatabase() {
     db.exec(`
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
       CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
-      CREATE INDEX IF NOT EXISTS idx_employees_department ON employees(department);
       CREATE INDEX IF NOT EXISTS idx_supplies_category ON supplies(category);
       CREATE INDEX IF NOT EXISTS idx_supplies_status ON supplies(status);
-      CREATE INDEX IF NOT EXISTS idx_supply_logs_employee_id ON supply_logs(employee_id);
+      CREATE INDEX IF NOT EXISTS idx_supply_logs_user_id ON supply_logs(user_id);
       CREATE INDEX IF NOT EXISTS idx_supply_logs_supply_id ON supply_logs(supply_id);
       CREATE INDEX IF NOT EXISTS idx_supply_logs_issued_date ON supply_logs(issued_date);
       CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Plus, Package } from 'lucide-react';
+import SupplyEditModal from '@/components/SupplyEditModal';
+import { Plus, Package, Edit2 } from 'lucide-react';
 
 interface Supply {
   id: string;
@@ -19,8 +20,13 @@ export default function SuppliesPage() {
   const [supplies, setSupplies] = useState<Supply[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSupply, setSelectedSupply] = useState<Supply | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [userRole, setUserRole] = useState('');
 
   useEffect(() => {
+    const role = localStorage.getItem('userRole');
+    setUserRole(role || '');
     fetchSupplies();
   }, []);
 
@@ -36,6 +42,40 @@ export default function SuppliesPage() {
     } catch (error) {
       console.error('Error fetching supplies:', error);
       setIsLoading(false);
+    }
+  };
+
+  const handleEditSupply = (supply: Supply) => {
+    setSelectedSupply(supply);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveSupply = async (updatedData: Partial<Supply>) => {
+    if (!selectedSupply) return;
+
+    console.log('Saving supply data:', updatedData);
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch(`/api/supplies/${selectedSupply.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updatedData),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Failed to update supply');
+      }
+
+      // Refresh supplies list
+      await fetchSupplies();
+      setIsEditModalOpen(false);
+    } catch (error: any) {
+      throw error;
     }
   };
 
@@ -59,6 +99,26 @@ export default function SuppliesPage() {
       'Supplies': 'bg-yellow-100 text-yellow-800',
     };
     return colors[category] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'available':
+        return 'bg-green-100 text-green-800';
+      case 'low-stock-available':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'out-of-stock':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const formatStatus = (status: string) => {
+    return status
+      .split('-')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   };
 
   return (
@@ -116,18 +176,23 @@ export default function SuppliesPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                   Status
                 </th>
+                {['admin', 'inventory_staff'].includes(userRole) && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                    Actions
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan={['admin', 'inventory_staff'].includes(userRole) ? 8 : 7} className="px-6 py-4 text-center text-gray-500">
                     Loading supplies...
                   </td>
                 </tr>
               ) : filteredSupplies.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan={['admin', 'inventory_staff'].includes(userRole) ? 8 : 7} className="px-6 py-4 text-center text-gray-500">
                     No supplies found
                   </td>
                 </tr>
@@ -149,24 +214,27 @@ export default function SuppliesPage() {
                       {supply.quantity} {supply.unit}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      ${supply.price ? supply.price.toFixed(2) : '0.00'}
+                      ₱{supply.price ? supply.price.toFixed(2) : '0.00'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      ${supply.price ? (supply.price * supply.quantity).toFixed(2) : '0.00'}
+                      ₱{supply.price ? (supply.price * supply.quantity).toFixed(2) : '0.00'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${
-                          supply.status === 'available'
-                            ? 'bg-green-100 text-green-800'
-                            : supply.status === 'low-stock'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}
-                      >
-                        {supply.status.charAt(0).toUpperCase() + supply.status.slice(1)}
+                      <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(supply.status)}`}>
+                        {formatStatus(supply.status)}
                       </span>
                     </td>
+                    {['admin', 'inventory_staff'].includes(userRole) && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <button
+                          onClick={() => handleEditSupply(supply)}
+                          className="flex items-center gap-2 px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        >
+                          <Edit2 size={16} />
+                          Edit
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
@@ -175,13 +243,13 @@ export default function SuppliesPage() {
             {filteredSupplies.length > 0 && (
               <tfoot className="bg-gray-50 border-t-2 border-gray-300">
                 <tr>
-                  <td colSpan={5} className="px-6 py-4 font-semibold text-gray-900">
+                  <td colSpan={['admin', 'inventory_staff'].includes(userRole) ? 6 : 5} className="px-6 py-4 font-semibold text-gray-900">
                     Grand Total:
                   </td>
                   <td className="px-6 py-4 font-bold text-lg text-gray-900">
-                    ${totalValue.toFixed(2)}
+                    ₱{totalValue.toFixed(2)}
                   </td>
-                  <td></td>
+                  {['admin', 'inventory_staff'].includes(userRole) && <td></td>}
                 </tr>
               </tfoot>
             )}
@@ -203,17 +271,28 @@ export default function SuppliesPage() {
           <div className="rounded-lg bg-white p-4 shadow-md">
             <p className="text-sm text-gray-600">Low Stock</p>
             <p className="text-2xl font-bold text-yellow-600">
-              {supplies.filter((s) => s.status === 'low-stock').length}
+              {supplies.filter((s) => s.status === 'low-stock-available').length}
             </p>
           </div>
           <div className="rounded-lg bg-white p-4 shadow-md">
-            <p className="text-sm text-gray-600">Total Value</p>
-            <p className="text-2xl font-bold text-blue-600">
-              ${supplies.reduce((sum, s) => sum + (s.price ? s.price * s.quantity : 0), 0).toFixed(2)}
+            <p className="text-sm text-gray-600">Out of Stock</p>
+            <p className="text-2xl font-bold text-red-600">
+              {supplies.filter((s) => s.status === 'out-of-stock').length}
             </p>
           </div>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      <SupplyEditModal
+        supply={selectedSupply}
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedSupply(null);
+        }}
+        onSave={handleSaveSupply}
+      />
     </DashboardLayout>
   );
 }
