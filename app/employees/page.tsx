@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import AddEmployeeModal from '@/components/AddEmployeeModal';
 import EditEmployeeModal from '@/components/EditEmployeeModal';
-import { Search, Plus, Edit, Trash2 } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2 } from 'lucide-react';
 
 interface User {
   id: string;
@@ -84,8 +84,8 @@ export default function EmployeesPage() {
   const filteredUsers = users.filter(
     (user) =>
       user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.middle_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.middle_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.extension_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -202,7 +202,7 @@ export default function EmployeesPage() {
                             onClick={() => handleEditEmployee(user)}
                             className="text-blue-600 hover:text-blue-900 font-medium flex items-center gap-1"
                           >
-                            <Edit size={16} />
+                            <Pencil size={16} />
                             Edit
                           </button>
                           <button 

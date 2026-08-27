@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { Eye, EyeOff, RefreshCw, X } from 'lucide-react';
 
 interface AddEmployeeModalProps {
   isOpen: boolean;
@@ -9,9 +9,40 @@ interface AddEmployeeModalProps {
   onSuccess: () => void;
 }
 
+function generateSecurePassword(length = 16): string {
+  const characterSets = [
+    'ABCDEFGHJKLMNPQRSTUVWXYZ',
+    'abcdefghijkmnopqrstuvwxyz',
+    '23456789',
+    '!@#$%^&*()_+-=[]{}',
+  ];
+  const allCharacters = characterSets.join('');
+  const passwordCharacters = characterSets.map((characterSet) =>
+    characterSet[crypto.getRandomValues(new Uint32Array(1))[0] % characterSet.length]
+  );
+
+  while (passwordCharacters.length < length) {
+    passwordCharacters.push(
+      allCharacters[crypto.getRandomValues(new Uint32Array(1))[0] % allCharacters.length]
+    );
+  }
+
+  for (let index = passwordCharacters.length - 1; index > 0; index -= 1) {
+    const randomIndex = crypto.getRandomValues(new Uint32Array(1))[0] % (index + 1);
+    [passwordCharacters[index], passwordCharacters[randomIndex]] = [
+      passwordCharacters[randomIndex],
+      passwordCharacters[index],
+    ];
+  }
+
+  return passwordCharacters.join('');
+}
+
 export default function AddEmployeeModal({ isOpen, onClose, onSuccess }: AddEmployeeModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     first_name: '',
     middle_name: '',
@@ -28,6 +59,12 @@ export default function AddEmployeeModal({ isOpen, onClose, onSuccess }: AddEmpl
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleGeneratePassword = () => {
+    const password = generateSecurePassword();
+    setFormData((prev) => ({ ...prev, password, confirmPassword: password }));
+    setError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,7 +87,18 @@ export default function AddEmployeeModal({ isOpen, onClose, onSuccess }: AddEmpl
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          confirmPassword: formData.confirmPassword,
+          firstName: formData.first_name,
+          middleName: formData.middle_name,
+          lastName: formData.last_name,
+          extensionName: formData.extension_name,
+          role: formData.role,
+          department: formData.department,
+          phone: formData.phone,
+        }),
       });
 
       const data = await res.json();
@@ -249,19 +297,37 @@ export default function AddEmployeeModal({ isOpen, onClose, onSuccess }: AddEmpl
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password *
-              </label>
+              <div className="mb-1 flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700">
+                  Password *
+                </label>
+                <button
+                  type="button"
+                  onClick={handleGeneratePassword}
+                  className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800"
+                >
+                  <RefreshCw size={14} />
+                  Generate secure password
+                </button>
+              </div>
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
                 required
                 minLength={8}
-                className="w-full px-3 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 pr-10 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Min 8 characters"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((visible) => !visible)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                className="relative float-right -mt-8 mr-3 text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
             {/* Confirm Password */}
             <div>
@@ -269,15 +335,23 @@ export default function AddEmployeeModal({ isOpen, onClose, onSuccess }: AddEmpl
                 Confirm Password *
               </label>
               <input
-                type="password"
+                type={showConfirmPassword ? 'text' : 'password'}
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 required
                 minLength={8}
-                className="w-full px-3 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 pr-10 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Confirm password"
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((visible) => !visible)}
+                aria-label={showConfirmPassword ? 'Hide confirmed password' : 'Show confirmed password'}
+                className="relative float-right -mt-8 mr-3 text-gray-500 hover:text-gray-700"
+              >
+                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
 
             {/* Submit Button */}
