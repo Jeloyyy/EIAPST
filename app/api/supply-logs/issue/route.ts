@@ -33,8 +33,8 @@ export async function POST(request: NextRequest) {
 
     // Verify user exists
     const userStmt = db.prepare('SELECT id FROM users WHERE id = ?');
-    const user = userStmt.get(userId);
-    if (!user) {
+    const employee = userStmt.get(userId);
+    if (!employee) {
       return NextResponse.json(
         { success: false, message: 'User not found' },
         { status: 404 }

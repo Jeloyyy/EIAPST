@@ -10,9 +10,13 @@ declare module 'lucide-react' {
   export const ChevronDown: any;
   export const Search: any;
   export const Plus: any;
+  export const Pencil: any;
+  export const Trash2: any;
+  export const Edit2: any;
   export const Eye: any;
   export const EyeOff: any;
   export const RotateCw: any;
+  export const RefreshCw: any;
   export const Send: any;
   export const Lock: any;
   export const Unbox: any;
