@@ -124,8 +124,8 @@ export default function IssueSupplyModal({
 
       onSuccess();
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'An error occurred');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
       setIsSubmitting(false);
     }
   };
@@ -140,26 +140,34 @@ export default function IssueSupplyModal({
     <>
       {/* Overlay */}
       <div
-        className="fixed bg-opacity-100 inset-0 z-40"
+        className="fixed inset-0 z-40 bg-slate-950/25 backdrop-blur-[1px]"
         onClick={onClose}
       />
 
       {/* Side Panel */}
-      <div className="fixed right-0 top-0 h-full w-96 bg-white shadow-lg z-50 overflow-y-auto">
-        <div className="p-6">
+      <div className="fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col overflow-y-auto bg-slate-50 shadow-2xl">
+        <div className="border-b border-slate-200 bg-white px-6 pb-5 pt-6">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Issue Supply</h2>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-600">Supply inventory</p>
+              <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Issue Supply</h2>
+              <p className="mt-1 text-sm text-slate-500">Assign available items to an employee.</p>
+            </div>
             <button
+              type="button"
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Close issue supply form"
+              className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
             >
-              <X size={24} />
+              <X size={20} />
             </button>
           </div>
+        </div>
 
+        <div className="flex-1 px-6 py-5">
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Error Message */}
             {error && (
               <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
@@ -290,7 +298,7 @@ export default function IssueSupplyModal({
             <button
               type="submit"
               disabled={isSubmitting || isLoading}
-              className="w-full mt-6 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+              className="mt-2 w-full rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSubmitting ? 'Issuing Supply...' : 'Issue Supply'}
             </button>

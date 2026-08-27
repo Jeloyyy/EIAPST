@@ -64,8 +64,8 @@ export default function SupplyEditModal({ supply, isOpen, onClose, onSave }: Sup
     try {
       await onSave(formData);
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to update supply');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to update supply');
     } finally {
       setIsLoading(false);
     }
@@ -74,21 +74,26 @@ export default function SupplyEditModal({ supply, isOpen, onClose, onSave }: Sup
   if (!isOpen || !supply) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/25 p-4 backdrop-blur-[1px]">
+      <div className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Edit Supply</h2>
+        <div className="flex items-start justify-between border-b border-slate-200 px-6 py-5">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-600">Supply inventory</p>
+            <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">Edit Supply</h2>
+          </div>
           <button
+            type="button"
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 transition-colors"
+            aria-label="Close edit supply form"
+            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           >
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto px-6 py-5">
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
               {error}
@@ -105,7 +110,7 @@ export default function SupplyEditModal({ supply, isOpen, onClose, onSave }: Sup
               name="name"
               value={formData.name || ''}
               onChange={handleChange}
-              className="w-full px-3 py-2 border text-black border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
               required
             />
           </div>
@@ -120,7 +125,7 @@ export default function SupplyEditModal({ supply, isOpen, onClose, onSave }: Sup
               value={formData.description || ''}
               onChange={handleChange}
               rows={2}
-              className="w-full px-3 py-2 border text-black border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
             />
           </div>
 
@@ -133,7 +138,7 @@ export default function SupplyEditModal({ supply, isOpen, onClose, onSave }: Sup
               name="category"
               value={formData.category || ''}
               onChange={handleChange}
-              className="w-full px-3 py-2 border text-black border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
               required
             >
               <option value="">Select category</option>
@@ -157,7 +162,7 @@ export default function SupplyEditModal({ supply, isOpen, onClose, onSave }: Sup
               value={formData.quantity || 0}
               onChange={handleChange}
               min="0"
-              className="w-full px-3 py-2 border text-black border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
               required
             />
           </div>
@@ -173,7 +178,7 @@ export default function SupplyEditModal({ supply, isOpen, onClose, onSave }: Sup
               value={formData.unit || ''}
               onChange={handleChange}
               placeholder="e.g., pcs, kg, box"
-              className="w-full px-3 py-2 border text-black border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
               required
             />
           </div>
@@ -190,7 +195,7 @@ export default function SupplyEditModal({ supply, isOpen, onClose, onSave }: Sup
               onChange={handleChange}
               min="0"
               step="0.01"
-              className="w-full px-3 py-2 border text-black border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
             />
           </div>
 
@@ -199,7 +204,7 @@ export default function SupplyEditModal({ supply, isOpen, onClose, onSave }: Sup
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Status
             </label>
-            <div className="px-3 py-2 bg-gray-50 border text-black border-gray-300 rounded-lg text-sm text-gray-600">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-600">
               {formData.quantity === 0
                 ? 'out-of-stock'
                 : formData.quantity! <= 5
@@ -209,18 +214,18 @@ export default function SupplyEditModal({ supply, isOpen, onClose, onSave }: Sup
           </div>
 
           {/* Buttons */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 border-t border-slate-200 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              className="flex-1 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-blue-400"
+              className="flex-1 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:bg-blue-400"
             >
               {isLoading ? 'Saving...' : 'Save Changes'}
             </button>

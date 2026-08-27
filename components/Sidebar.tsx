@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import {
@@ -82,8 +83,8 @@ export default function Sidebar() {
         {/* Logo Section */}
         <div className="flex items-center justify-between border-b border-blue-700 px-6 py-6">
           <Link href="/dashboard" className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white">
-              <span className="text-lg font-bold text-blue-900">EM</span>
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border-2 border-blue-200 bg-white shadow-sm">
+              <Image src="/images/resort-logo-icon.png" alt="E.M. Villanueva Resort logo" width={40} height={40} className="h-full w-full object-contain" priority />
             </div>
             <div>
               <h1 className="text-lg font-bold">Villanueva Resort</h1>

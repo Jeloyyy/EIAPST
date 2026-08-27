@@ -3,6 +3,7 @@
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { Eye, EyeOff } from 'lucide-react';
 import { loginUser } from '@/lib/auth';
 
 export default function LoginPage() {
@@ -10,6 +11,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -47,36 +49,49 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="w-full max-w-md">
-        <div className="rounded-lg bg-white shadow-lg">
-          {/* Header */}
-          <div className="border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-8 text-center rounded-t-lg">
-            <div className="mb-3 flex justify-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white">
-                <span className="text-lg font-bold text-indigo-600">E</span>
-              </div>
+    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8">
+      <div className="grid w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl md:grid-cols-[0.9fr_1.1fr]">
+        <div className="relative hidden overflow-hidden bg-slate-900 p-10 text-white md:flex md:flex-col md:justify-between">
+          <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full border-[24px] border-blue-500/20" />
+          <div className="relative">
+            <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl border-2 border-blue-200 bg-white shadow-lg shadow-blue-950/30">
+              <Image src="/images/resort-logo-icon.png" alt="E.M. Villanueva Resort logo" width={96} height={96} className="h-full w-full object-contain" priority />
             </div>
-            <h1 className="text-2xl font-bold text-white">E.M. Villanueva Resort</h1>
-            <p className="mt-2 text-sm text-blue-100">
-              Employee & Personal Supplies Tracking System
+            <p className="mt-8 text-xs font-semibold uppercase tracking-[0.2em] text-blue-300">E.M. Villanueva Resort</p>
+            <h1 className="mt-3 max-w-xs text-3xl font-bold leading-tight tracking-tight">Employee operations, in one place.</h1>
+            <p className="mt-4 max-w-xs text-sm leading-6 text-slate-300">
+              Access employee records and supplies tracking securely.
             </p>
+          </div>
+          <p className="relative text-xs text-slate-400">Employee Information & Personal Supplies Tracking System</p>
+        </div>
+
+        <div className="bg-white px-6 py-8 sm:px-10 sm:py-12">
+          <div className="mb-8 md:hidden">
+            <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border-2 border-blue-200 bg-white shadow-sm">
+              <Image src="/images/resort-logo-icon.png" alt="E.M. Villanueva Resort logo" width={64} height={64} className="h-full w-full object-contain" priority />
+            </div>
+            <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">E.M. Villanueva Resort</p>
+          </div>
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">Welcome back</h2>
+            <p className="mt-2 text-sm text-slate-500">Sign in to continue to your workspace.</p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="px-8 py-8">
+          <form onSubmit={handleSubmit}>
             {/* Error Message */}
             {error && (
-              <div className="mb-4 rounded-md bg-red-50 p-3 border border-red-200">
+              <div className="mb-5 rounded-lg border border-red-200 bg-red-50 p-3">
                 <p className="text-sm font-medium text-red-700">{error}</p>
               </div>
             )}
 
             {/* Email Field */}
-            <div className="mb-6">
+            <div className="mb-5">
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-xs font-semibold text-slate-600"
               >
                 Email Address
               </label>
@@ -87,44 +102,55 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 disabled={isLoading}
-                className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 disabled:bg-gray-50"
+                className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-3 text-sm text-slate-900 placeholder-slate-400 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-slate-50"
                 required
               />
             </div>
 
             {/* Password Field */}
-            <div className="mb-2">
+            <div className="mb-5">
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-xs font-semibold text-slate-600"
               >
                 Password
               </label>
-              <input
-                type="password"
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                disabled={isLoading}
-                className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 disabled:bg-gray-50"
-                required
-              />
+              <div className="relative mt-2">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  disabled={isLoading}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-3 pr-11 text-sm text-slate-900 placeholder-slate-400 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-slate-50"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((isVisible) => !isVisible)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             {/* Remember Me & Forgot Password */}
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-7 flex items-center justify-between gap-4">
               <label className="flex items-center">
                 <input
                   type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                   disabled={isLoading}
                 />
-                <span className="ml-2 text-sm text-gray-700">Remember me</span>
+                <span className="ml-2 text-sm text-slate-600">Remember me</span>
               </label>
               <a
                 href="#"
-                className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                className="text-sm font-semibold text-blue-600 hover:text-blue-700"
               >
                 Forgot password?
               </a>
@@ -134,7 +160,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 py-2.5 font-semibold text-white hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              className="w-full rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center">
@@ -163,10 +189,10 @@ export default function LoginPage() {
           </form>
 
           {/* Footer */}
-          <div className="border-t border-gray-200 bg-gray-50 px-8 py-4 text-center rounded-b-lg">
-            <p className="text-sm text-gray-600">
+          <div className="mt-8 border-t border-slate-200 pt-5 text-center">
+            <p className="text-sm text-slate-500">
               Need help?{' '}
-              <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">
+              <a href="#" className="font-semibold text-blue-600 hover:text-blue-700">
                 Contact IT Support
               </a>
             </p>
