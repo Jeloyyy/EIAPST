@@ -104,7 +104,7 @@ export default function EmployeesPage() {
               onClick={() => setIsAddEmployeeModalOpen(true)}
               className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition-colors">
               <Plus size={20} />
-              Add User
+              Add Employee
             </button>
           )}
         </div>
